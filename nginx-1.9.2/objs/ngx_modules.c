@@ -35,18 +35,11 @@ extern ngx_module_t  ngx_http_scgi_module;
 extern ngx_module_t  ngx_http_memcached_module;
 extern ngx_module_t  ngx_http_empty_gif_module;
 extern ngx_module_t  ngx_http_browser_module;
-extern ngx_module_t  ngx_http_secure_link_module;
 extern ngx_module_t  ngx_http_upstream_hash_module;
 extern ngx_module_t  ngx_http_upstream_ip_hash_module;
 extern ngx_module_t  ngx_http_upstream_least_conn_module;
 extern ngx_module_t  ngx_http_upstream_keepalive_module;
 extern ngx_module_t  ngx_http_upstream_zone_module;
-extern ngx_module_t  ngx_http_mytest_config_module;
-extern ngx_module_t  ngx_http_mytest_module;
-extern ngx_module_t  ngx_http_subrequest_mytest_module;
-extern ngx_module_t  ngx_http_mytest_upstream_module;
-extern ngx_module_t  sendfile_test;
-extern ngx_module_t  ngx_http_redis2_module;
 extern ngx_module_t  ngx_http_write_filter_module;
 extern ngx_module_t  ngx_http_header_filter_module;
 extern ngx_module_t  ngx_http_chunked_filter_module;
@@ -56,7 +49,6 @@ extern ngx_module_t  ngx_http_postpone_filter_module;
 extern ngx_module_t  ngx_http_ssi_filter_module;
 extern ngx_module_t  ngx_http_charset_filter_module;
 extern ngx_module_t  ngx_http_userid_filter_module;
-extern ngx_module_t  ngx_http_myfilter_module;
 extern ngx_module_t  ngx_http_headers_filter_module;
 extern ngx_module_t  ngx_http_copy_filter_module;
 extern ngx_module_t  ngx_http_range_body_filter_module;
@@ -94,18 +86,11 @@ ngx_module_t *ngx_modules[] = {
     &ngx_http_memcached_module,
     &ngx_http_empty_gif_module,
     &ngx_http_browser_module,
-    &ngx_http_secure_link_module,
     &ngx_http_upstream_hash_module,
     &ngx_http_upstream_ip_hash_module,
     &ngx_http_upstream_least_conn_module,
     &ngx_http_upstream_keepalive_module,
     &ngx_http_upstream_zone_module,
-    &ngx_http_mytest_config_module,
-    &ngx_http_mytest_module,
-    &ngx_http_subrequest_mytest_module,
-    &ngx_http_mytest_upstream_module,
-    &sendfile_test,
-    &ngx_http_redis2_module,
     &ngx_http_write_filter_module,
     &ngx_http_header_filter_module,
     &ngx_http_chunked_filter_module,
@@ -115,7 +100,6 @@ ngx_module_t *ngx_modules[] = {
     &ngx_http_ssi_filter_module,
     &ngx_http_charset_filter_module,
     &ngx_http_userid_filter_module,
-    &ngx_http_myfilter_module,
     &ngx_http_headers_filter_module,
     &ngx_http_copy_filter_module,
     &ngx_http_range_body_filter_module,

@@ -31,7 +31,7 @@ ngx_libc_crypt(ngx_pool_t *pool, u_char *key, u_char *salt, u_char **encrypted)
     struct crypt_data   cd;
 
     cd.initialized = 0;
-#ifdef __GLIBC__
+#if defined(__GLIBC__) && !defined(CRYPT_DATA_INTERNAL_SIZE)
     /* work around the glibc bug */
     cd.current_salt[0] = ~salt[0];
 #endif
