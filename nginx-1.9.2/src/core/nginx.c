@@ -449,7 +449,7 @@ socket监听状况，还是需要写到日志文件中去的。在nginx的main函数中，首先会调用ngx_l
     ngx_use_stderr = 0;
 
     /*
-    如果hginx.conf中配置为单进程工作模式，这时将会调用ngx_single_process_cycle方法进入单迸程工作模式。
+    如果nginx.conf中配置为单进程工作模式，这时将会调用ngx_single_process_cycle方法进入单迸程工作模式。
     */
     if (ngx_process == NGX_PROCESS_SINGLE) { //如果配置的是单进程工作模式，好像不会走到这里
         ngx_single_process_cycle(cycle);
