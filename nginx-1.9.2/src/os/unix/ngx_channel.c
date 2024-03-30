@@ -19,8 +19,7 @@
 */
 //ngx_write_channel和ngx_read_channel配对   用于父子进程之间通信，通信报文见NGX_CMD_QUIT等
 ngx_int_t
-ngx_write_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size,
-    ngx_log_t *log)
+ngx_write_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size, ngx_log_t *log)
 {
     ssize_t             n;
     ngx_err_t           err;
@@ -100,13 +99,12 @@ ngx_write_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size,
 }
 
 /*
-这里的参数意义与ngx_write_channel方法完全相同，只是要注意s套接字，它与发送方使用的s套接字是配对的。例如，在Nginx中，目前仅存
-在master进程向worker进程发送消息的场景，这时对于socketpair方法创建的channel[2]套接字对来说，master进程会使用channel[0]套接字
-来发送消息，而worker进程则会使用channel[l]套接字来接收消息。
-
-
+这里的参数意义与ngx_write_channel方法完全相同，只是要注意s套接字，它与发送方使用的s套接字是配对的。
+例如，在Nginx中，目前仅存在master进程向worker进程发送消息的场景，
+这时对于socketpair方法创建的channel[2]套接字对来说，
+master进程会使用channel[0]套接字来发送消息
+而worker进程则会使用channel[l]套接字来接收消息。
 */
-//ngx_write_channel和ngx_read_channel配对  用于父子进程之间通信，通信报文见NGX_CMD_QUIT等
 ngx_int_t
 ngx_read_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size, ngx_log_t *log)
 {

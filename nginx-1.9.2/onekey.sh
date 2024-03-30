@@ -1,6 +1,5 @@
 #!/bin/bash
 
-CFLAGS="-pipe -W -Wall -Wpointer-arith -Wno-unused -g3"
 prefix="/usr/local/nginx"
 # patch_file="patch/nginx-1.9.2.patch"
 # checkout_tag="release-1.9.2"
@@ -20,8 +19,10 @@ user_notation="@@@@"
 
 # fi
 
+CFLAGS="-pipe -Wall -Wno-unused -Wpointer-arith -O0 -g3"
 export CFLAGS
 # ./auto/configure --prefix=/opt/nginx --with-threads --with-http_ssl_module
+# ./configure --prefix=$prefix --with-threads --with-debug
 ./configure --prefix=$prefix --with-threads
 if [ $? -ne 0 ]; then
     echo "$user_notation configure failed"

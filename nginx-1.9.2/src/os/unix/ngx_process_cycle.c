@@ -669,18 +669,19 @@ ngx_start_worker_processes(ngx_cycle_t *cycle, ngx_int_t n, ngx_int_t type)
         ngx_spawn_process(cycle, ngx_worker_process_cycle,
                           (void *) (intptr_t) i, "worker process", type);
 
-        //向已经创建的worker进程广播当前创建worker进程信息。。。   
+        //向已经创建的worker进程广播当前创建worker进程信息
         ch.pid = ngx_processes[ngx_process_slot].pid;
         ch.slot = ngx_process_slot;
         ch.fd = ngx_processes[ngx_process_slot].channel[0]; //ngx_spawn_process中赋值
 
         /*  
-           这里每个子进程和父进程之间使用的是socketpair系统调用建立起来的全双工的socket  
-           channel[]在父子进程中各有一套，channel[0]为写端，channel[1]为读端  
-
-            
-           父进程关闭socket[0],子进程关闭socket[1]，父进程从sockets[1]中读写，子进程从sockets[0]中读写，还是全双工形态。参考http://www.xuebuyuan.com/1691574.html
            把该子进程的相关channel信息传递给已经创建好的其他所有子进程
+           Refer: https://yikun.github.io/2014/03/16/nginxchannel/
+
+           我们假设服务器共有4个worker进程，我们知道nginx有一个全局变量，是ngx_processes数组，
+           他存储着所有进程的信息，在worker1创建的时候，worker2，worker3，worker4进程是没有创建的，
+           因此，这个时候就牵扯到同步，最合理的方式是，在master创建一个进程的时候，
+           就应该通知所有子进程有新的进程被fork了，以及这个进程的基本信息。
          */
         ngx_pass_open_channel(cycle, &ch); 
     }
@@ -785,14 +786,12 @@ ngx_pass_open_channel(ngx_cycle_t *cycle, ngx_channel_t *ch)
     for (i = 0; i < ngx_last_process; i++) { /* ngx_last_process全局变量，同样在ngx_spawn_process()中被赋值，意为最后面的进程 */  
 
         
-        // 跳过刚创建的worker子进程 || 不存在的子进程 || 其父进程socket关闭的子进程  
-        //可以和ngx_worker_process_init中的channel关闭操作配合阅读
+        // 跳过刚创建的worker子进程 || 不存在的子进程 || 异常的worker(has no channel[0])
         if (i == ngx_process_slot
             || ngx_processes[i].pid == -1
-            || ngx_processes[i].channel[0] == -1) //跳过自己和异常的worker     
-        {
+            || ngx_processes[i].channel[0] == -1) {
             continue;
-        } //
+        }
 
         ngx_log_debug6(NGX_LOG_DEBUG_CORE, cycle->log, 0,
                       "pass channel s:%d pid:%P fd:%d to s:%i pid:%P fd:%d",
@@ -801,13 +800,13 @@ ngx_pass_open_channel(ngx_cycle_t *cycle, ngx_channel_t *ch)
                       ngx_processes[i].channel[0]);
 
         /* TODO: NGX_AGAIN */
-        //发送消息给其他的worker   
-        /* 给每个进程的父进程发送刚创建worker进程的信息，IPC方式以后再搞 */  
-        
-        //可以和ngx_worker_process_init中的channel关闭操作配合阅读
-        //向 每个进程 channel[0]发送信息    
-        
-        //对于父进程而言，他知道所有进程的channel[0]， 直接可以向子进程发送命令。 
+        /*
+        给每个worker进程发送刚刚创建的worker进程的信息
+        可以和ngx_worker_process_init中的channel关闭操作配合阅读
+
+        对于父进程而言，他知道所有进程的channel[0]， 直接可以向子进程发送命令。 
+        Master ------> Write channel[0] ------ Read channel[1] ------> Worker
+        */
         
         ngx_write_channel(ngx_processes[i].channel[0],
                           ch, sizeof(ngx_channel_t), cycle->log); //ch为本进程信息，ngx_processes[i].channel[0]为其他进程信息
@@ -1145,7 +1144,7 @@ ngx_worker_process_cycle(ngx_cycle_t *cycle, void *data) //data表示这是第几个wor
 
         ngx_process_events_and_timers(cycle);
 
-        if (ngx_terminate) { //没有关闭套接字，也没有处理为处理完的事件，而是直接exit
+        if (ngx_terminate) { //没有关闭套接字，也没有处理未处理完的事件，而是直接exit
             ngx_log_error(NGX_LOG_NOTICE, cycle->log, 0, "exiting");
 
             ngx_worker_process_exit(cycle);
@@ -1308,7 +1307,7 @@ ngx_worker_process_init(ngx_cycle_t *cycle, ngx_int_t worker)
 
     for (i = 0; ngx_modules[i]; i++) {
         if (ngx_modules[i]->init_process) {
-            if (ngx_modules[i]->init_process(cycle) == NGX_ERROR) { //ngx_event_process_init等
+            if (ngx_modules[i]->init_process(cycle) == NGX_ERROR) {
                 /* fatal */
                 exit(2);
             }
@@ -1316,42 +1315,6 @@ ngx_worker_process_init(ngx_cycle_t *cycle, ngx_int_t worker)
     }
 
     /*
-    
-    用socketpair生成两个sock[0]和sock[1]用于父进程和子进程的通信，当父进程使用其中一个socket时，为什么要调用close，关闭子进程的sock[1]，代码如下：
-          int r = socketpair( AF_UNIX, SOCK_STREAM, 0, fd );
-          if ( fork() ) {
-              Parent process: echo client 
-              int val = 0;
-              close( fd[1] );          
-               while ( 1 ) {
-                sleep( 1 );
-                ++val;
-                printf( "Sending data: %d\n", val );
-                write( fd[0], &val, sizeof(val) );
-                read( fd[0], &val, sizeof(val) );
-                printf( "Data received: %d\n", val );
-              }
-            }
-            else {
-               Child process: echo server 
-              int val;
-              close( fd[0] );
-              while ( 1 ) {
-                read( fd[1], &val, sizeof(val) );
-                ++val;
-                write( fd[1], &val, sizeof(val) );
-              }
-            }
-          }
-    本文来自CSDN博客，转载请标明出处：http://blog.csdn.net/sunnyboychina/archive/2007/11/14/1884076.aspx 
-    ------Solutions------
-    调用socketpair创建的两个socket都是打开的，fork后子进程会继承这两个打开的socket。为了实现父子进程通过socket pair（类似于管道）通信，必须保证父子进程分别open某一个socket。 
-    ------Solutions------
-    可以这么理解：父子进程一个负责向socket写数据，一个从中读取数据，当写的时候当然不能读了，同理，当读的时候就不能写了。和操作系统中的临界资源差不多。 
-    ------Solutions------
-    谢谢你们的解答，我懂了。呵呵
-    
-    
     channel[0] 是用来发送信息的，channel[1]是用来接收信息的。那么对自己而言，它需要向其他进程发送信息，需要保留其它进程的channel[0], 
     关闭channel[1]; 对自己而言，则需要关闭channel[0]。 最后把ngx_channel放到epoll中，从第一部分中的介绍我们可以知道，这个ngx_channel
     实际就是自己的 channel[1]。这样有信息进来的时候就可以通知到了。
@@ -1381,6 +1344,9 @@ ngx_worker_process_init(ngx_cycle_t *cycle, ngx_int_t worker)
         ngx_log_error(NGX_LOG_ALERT, cycle->log, ngx_errno,
                       "close() channel failed");
     }
+
+    // So, at last, the master process only keeps the channel[0],
+    // while all other worker processes only keep the channel[1].
 
 #if 0
     ngx_last_process = 0;
