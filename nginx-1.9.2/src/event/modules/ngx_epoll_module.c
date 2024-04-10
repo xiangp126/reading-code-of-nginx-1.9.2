@@ -175,7 +175,7 @@ static char *ngx_epoll_init_conf(ngx_cycle_t *cycle, void *conf);
 
 static int                  ep = -1; //ngx_epoll_init -> epoll_createµÄ·µ»ØÖµ
 static struct epoll_event  *event_list; //epoll_events¸ösizeof(struct epoll_event) * nevents, ¼ûngx_epoll_init
-static ngx_uint_t           nevents; //nerentsÒ²ÊÇÅäÖÃÏîepoll_eventsµÄ²ÎÊı
+static ngx_uint_t           nevents; //neventsÒ²ÊÇÅäÖÃÏîepoll_eventsµÄ²ÎÊı
 
 #if (NGX_HAVE_EVENTFD)
 //Ö´ĞĞngx_epoll_notifyºó»áÍ¨¹ıepoll_wait·µ»ØÖ´ĞĞ¸Ãº¯Êıngx_epoll_notify_handler
@@ -497,12 +497,9 @@ ngx_epoll_init(ngx_cycle_t *cycle, ngx_msec_t timer)
 
     if (ep == -1) {
        /*
-        epoll_create·µ»ØÒ»¸ö¾ä±ú£¬Ö®ºóepollµÄÊ¹ÓÃ¶¼½«ÒÀ¿¿Õâ¸ö¾ä±úÀ´±êÊ¶¡£²ÎÊısizeÊÇ¸æËßepollËùÒª´¦ÀíµÄ´óÖÂÊÂ¼şÊıÄ¿¡£²»ÔÙÊ¹ÓÃepollÊ±£¬
-        ±ØĞëµ÷ÓÃclose¹Ø±ÕÕâ¸ö¾ä±ú¡£×¢Òâsize²ÎÊıÖ»ÊÇ¸æËßÄÚºËÕâ¸öepoll¶ÔÏó»á´¦ÀíµÄÊÂ¼ş´óÖÂÊıÄ¿£¬¶ø²»ÊÇÄÜ¹»´¦ÀíµÄÊÂ¼şµÄ×î´ó¸öÊı¡£ÔÚLinuxŞ©
-        ĞÂµÄÒ»Ğ©ÄÚºË°æ±¾µÄÊµÏÖÖĞ£¬Õâ¸ösize²ÎÊıÃ»ÓĞÈÎºÎÒâÒå¡£
-
-        µ÷ÓÃepoll_createÔÚÄÚºËÖĞ´´½¨epoll¶ÔÏó¡£ÉÏÎÄÒÑ¾­½²¹ı£¬²ÎÊısize²»ÊÇÓÃÓÚÖ¸Ã÷epollÄÜ¹»´¦ÀíµÄ×î´óÊÂ¼ş¸öÊı£¬ÒòÎªÔÚĞí¶àLinuxÄÚºË
-        °æ±¾ÖĞ£¬epollÊÇ²»´¦ÀíÕâ¸ö²ÎÊıµÄ£¬ËùÒÔÉèÎªcycle->connectionn/2£¨¶ø²»ÊÇcycle->connection_n£©Ò²²»Òª½ô
+        epoll_create·µ»ØÒ»¸ö¾ä±ú£¬Ö®ºóepollµÄÊ¹ÓÃ¶¼½«ÒÀ¿¿Õâ¸ö¾ä±úÀ´±êÊ¶¡£
+        ÒòÎªÔÚĞí¶àLinuxÄÚºË°æ±¾ÖĞ£¬epollÊÇ²»´¦ÀíÕâ¸ö²ÎÊıµÄ
+        ËùÒÔÉèÎªcycle->connectionn/2£¨¶ø²»ÊÇcycle->connection_n£©Ò²²»Òª½ô
         */
         ep = epoll_create(cycle->connection_n / 2);
 
@@ -1105,7 +1102,6 @@ ngx_notify->ngx_epoll_notifyÖ»»á´¥·¢epoll_in£¬²»»áÍ¬Ê±Òı·¢epoll_out£¬Èç¹ûÊÇÍøÂç¶
         }
 
         revents = event_list[i].events; //È¡³öÊÂ¼şÀàĞÍ
-        ngx_epoll_event_2str(revents, epollbuf);
 
         memset(epollbuf, 0, sizeof(epollbuf));
         ngx_epoll_event_2str(revents, epollbuf);

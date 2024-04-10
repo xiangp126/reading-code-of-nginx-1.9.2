@@ -999,6 +999,7 @@ ngx_get_connection(ngx_socket_t s, ngx_log_t *log) //从连接池中获取一个ngx_conne
         return NULL;
     }
 
+    // get the first free connection from connection pool
     c = ngx_cycle->free_connections;
 
     if (c == NULL) {
@@ -1050,20 +1051,6 @@ ngx_get_connection(ngx_socket_t s, ngx_log_t *log) //从连接池中获取一个ngx_conne
     return c;
 }
 
-/*
-在使用连接池时，Nginx也封装了两个方法，见表9-1。
-    如果我们开发的模块直接使用了连接池，那么就可以用这两个方法来获取、释放ngx_connection_t结构体。
-表9-1  连接池的使用方法
-┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┓
-┃    连接池操作方法名                  ┃    参数含义                ┃    执行意义                          ┃
-┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━┫
-┃npc_connection_t *ngx_get_connection  ┃  s是这条连接的套接字句柄， ┃  从连接池中获取一个ngx_connection_t  ┃
-┃(ngx_socket_t s, ngx_log_t *log)      ┃log则是记录日志的对象       ┃结构体，同时获取相应的读／写事件      ┃
-┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━┫
-┃void ngx_free_connection              ┃  c是需要回收的连接         ┃  将这个连接回收到连接池中            ┃
-┃(ngx_connection_t)                    ┃                            ┃                                      ┃
-┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━┛
-*/
 void
 ngx_free_connection(ngx_connection_t *c) //归还c到连接池中
 {

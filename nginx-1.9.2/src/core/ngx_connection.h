@@ -53,7 +53,7 @@ struct ngx_listening_s { //初始化及赋值见ngx_http_add_listening    热升级nginx的
     ngx_log_t           log; //见ngx_http_add_listening
     ngx_log_t          *logp;
 
-    size_t              pool_size;//如果为新的TCP连接创建内存池，则内存池的初始大小应该是pool_size      见ngx_http_add_listening
+    size_t              pool_size;//如果为新的TCP连接创建内存池，则内存池的初始大小应该是pool_size,见ngx_http_add_listening
     /* should be here because of the AcceptEx() preread */
     
     size_t              post_accept_buffer_size;
@@ -246,7 +246,9 @@ struct ngx_connection_s {  //cycle->read_events和cycle->write_events这两个数组存
     listen过程中，指向原始请求ngx_http_connection_t(ngx_http_init_connection ngx_http_ssl_handshake),接收到客户端数据后指向ngx_http_request_t(ngx_http_wait_request_handler)
     http2协议的过程中，在ngx_http_v2_connection_t(ngx_http_v2_init)
  */
-    void               *data; /* 如果是subrequest，则data最终指向最下层子请求r,见ngx_http_subrequest */
+    // if the connection is idle, data is used as the next pointer in free_connections queue
+    // if the connection is active, data is used to store request
+    void               *data;
     //如果是文件异步i/o中的ngx_event_aio_t，则它来自ngx_event_aio_t->ngx_event_t(只有读),如果是网络事件中的event,则为ngx_connection_s中的event(包括读和写)
     ngx_event_t        *read;//连接对应的读事件   赋值在ngx_event_process_init，空间是从ngx_cycle_t->read_event池子中获取的
     ngx_event_t        *write; //连接对应的写事件  赋值在ngx_event_process_init 一般在ngx_handle_write_event中添加些事件，空间是从ngx_cycle_t->read_event池子中获取的
@@ -268,7 +270,7 @@ struct ngx_connection_s {  //cycle->read_events和cycle->write_events这两个数组存
     //接收到客户端连接后会冲连接池分配一个ngx_connection_s结构，其listening成员指向服务器接受该连接的listen信息结构，见ngx_event_accept
     ngx_listening_t    *listening; //实际上是从cycle->listening.elts中的一个ngx_listening_t   
 
-    off_t               sent;//这个连接上已经发送出去的字节数 //ngx_linux_sendfile_chain和ngx_writev_chain没发送多少字节就加多少字节
+    off_t               sent;//这个连接上已经发送出去的字节数 //ngx_linux_sendfile_chain和ngx_writev_chain每发送多少字节就加多少字节
 
     ngx_log_t          *log;//可以记录日志的ngx_log_t对象 其实就是ngx_listening_t中获取的log //赋值见ngx_event_accept
 
@@ -276,7 +278,7 @@ struct ngx_connection_s {  //cycle->read_events和cycle->write_events这两个数组存
     内存池。一般在accept -个新连接时，会创建一个内存池，而在这个连接结束时会销毁内存池。注意，这里所说的连接是指成功建立的
     TCP连接，所有的ngx_connection_t结构体都是预分配的。这个内存池的大小将由listening监听对象中的pool_size成员决定
      */
-    ngx_pool_t         *pool; //在accept返回成功后创建poll,见ngx_event_accept， 连接上游服务区的时候在ngx_http_upstream_connect创建
+    ngx_pool_t         *pool; //在accept返回成功后创建pool,见ngx_event_accept，连接上游服务区的时候在ngx_http_upstream_connect创建
 
     struct sockaddr    *sockaddr; //连接客户端的sockaddr结构体  客户端的，本端的为下面的local_sockaddr 赋值见ngx_event_accept
     socklen_t           socklen; //sockaddr结构体的长度  //赋值见ngx_event_accept

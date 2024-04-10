@@ -144,7 +144,7 @@ ngx_cycle_t结构体支持的主要方法
 //http://tech.uc.cn/?p=300 参数解析相关数据结构参考
 //初始化参考ngx_init_cycle，最终有一个全局类型的ngx_cycle_s，即ngx_cycle,  ngx_conf_s中包含该类型成员cycle
 struct ngx_cycle_s {
-    /*     保存着所有模块存储配置项的结构体指针，     它首先是一个数组，数组大小为ngx_max_module，正好与Nginx的module个数一样；     
+    /* 保存着所有模块存储配置项的结构体指针，     它首先是一个数组，数组大小为ngx_max_module，正好与Nginx的module个数一样；     
     每个数组成员又是一个指针，指向另一个存储着指针的数组，因此会看到void ****    请见陶辉所著《深入理解Nginx-模块开发与架构解析》
     一书302页插图。    另外，这个图也不错：http://img.my.csdn.net/uploads/201202/9/0_1328799724GTUk.gif 该数组的成员数为ngx_max_module   
     */ 
@@ -161,7 +161,7 @@ struct ngx_cycle_s {
     void                  ****conf_ctx; //有多少个模块就会有多少个指向这些模块的指针，见ngx_init_cycle   ngx_max_module
     ngx_pool_t               *pool; // 内存池
 
-    /*    日志模块中提供了生成基本ngx_log_t日志对象的功能，这里的log实际上是在还没有执行ngx_init_cycle方法前，    
+    /* 日志模块中提供了生成基本ngx_log_t日志对象的功能，这里的log实际上是在还没有执行ngx_init_cycle方法前，    
     也就是还没有解析配置前，如果有信息需要输出到日志，就会暂时使用log对象，它会输出到屏幕。    
     在ngx_init_cycle方法执行后，将会根据nginx.conf配置文件中的配置项，构造出正确的日志文件，此时会对log重新赋值。    */
     //ngx_init_cycle中赋值cycle->log = &cycle->new_log;
@@ -188,7 +188,7 @@ struct ngx_cycle_s {
     为next指针串联成一个单链表，如此，一旦有用户发起连接时就从free_connections指向的链表头获取一个空闲的连接，同时free_connections再指
     向下一个空闲连接。而归还连接时只需把该连接插入到free_connections链表表头即可。
      */ //见ngx_event_process_init, ngx_connection_t空间和它当中的读写ngx_event_t存储空间都在该函数一次性分配好
-    ngx_connection_t         *free_connections;// 可用连接池，与free_connection_n配合使用
+    ngx_connection_t         *free_connections; // 可用连接池，与free_connection_n配合使用
     ngx_uint_t                free_connection_n;// 可用连接池中连接的总数
 
     //ngx_connection_s中的queue添加到该链表上
@@ -199,7 +199,7 @@ struct ngx_cycle_s {
     */ 
     ngx_queue_t               reusable_connections_queue;/* 双向链表容器，元素类型是ngx_connection_t结构体，表示可重复使用连接队列 表示可以重用的连接 */
 
-//ngx_http_optimize_servers->ngx_http_init_listening->ngx_http_add_listening->ngx_create_listening把解析到的listen配置项信息添加到cycle->listening中
+    //ngx_http_optimize_servers->ngx_http_init_listening->ngx_http_add_listening->ngx_create_listening把解析到的listen配置项信息添加到cycle->listening中
     //通过"listen"配置创建ngx_listening_t加入到该数组中
     //注意，有多少个worker进程就会复制多少个ngx_listening_t, 见ngx_clone_listening
     ngx_array_t               listening;// 动态数组，每个数组元素储存着ngx_listening_t成员，表示监听端口及相关的参数
@@ -220,7 +220,7 @@ struct ngx_cycle_s {
     ngx_list_t                shared_memory;// 单链表容器，元素类型是ngx_shm_zone_t结构体，每个元素表示一块共享内存
 
     //最开始free_connection_n=connection_n，见ngx_event_process_init
-    ngx_uint_t                connection_n;// 当前进程中所有链接对象的总数，与成员配合使用
+    ngx_uint_t                connection_n;// 当前进程中所有连接对象的总数，与成员配合使用
     ngx_uint_t                files_n; //每个进程能够打开的最多文件数  赋值见ngx_event_process_init
 
     /*
@@ -243,10 +243,10 @@ struct ngx_cycle_s {
     序号就可将每一个连接、读事件、写事件对应起来，这个对应关系在ngx_event_core_module模块的初始化过程中就已经决定了（参见9.5节）。这3个数组
     的大小都是由cycle->connection_n决定。
      */ //预分配的读写事件空间，类型ngx_event_t  //子进程在ngx_event_process_init中创建空间和赋值，connections和read_events  write_events数组对应
-    ngx_event_t              *read_events;// 指向当前进程中的所有读事件对象，connection_n同时表示所有读事件的总数，因为每个连接分别有一个读写事件
-    ngx_event_t              *write_events;// 指向当前进程中的所有写事件对象，connection_n同时表示所有写事件的总数，因为每个连接分别有一个读写事件
+    ngx_event_t              *read_events; // 指向当前进程中的所有读事件对象，connection_n同时表示所有读事件的总数，因为每个连接分别有一个读/写事件
+    ngx_event_t              *write_events;// 指向当前进程中的所有写事件对象，connection_n同时表示所有写事件的总数，因为每个连接分别有一个读/写事件
 
-    /*    旧的ngx_cycle_t 对象用于引用上一个ngx_cycle_t 对象中的成员。例如ngx_init_cycle 方法，在启动初期，    
+    /* 旧的ngx_cycle_t 对象用于引用上一个ngx_cycle_t 对象中的成员。例如ngx_init_cycle 方法，在启动初期，    
     需要建立一个临时的ngx_cycle_t对象保存一些变量， 
     再调用ngx_init_cycle 方法时就可以把旧的ngx_cycle_t 对象传进去，    而这时old_cycle对象就会保存这个前期的ngx_cycle_t对象。    */
     ngx_cycle_t              *old_cycle;

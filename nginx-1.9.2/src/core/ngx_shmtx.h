@@ -39,18 +39,20 @@ lockÈ¡ËøÓë14.3.3½ÚÖÐ½éÉÜµÄ×ÔÐýËøÊÇÒ»ÖÂµÄ£¬¶øÖ§³ÖÐÅºÅÁ¿ºó£¬ngx_shmtx_lock½«ÔÚspin
 typedef struct {
 #if (NGX_HAVE_ATOMIC_OPS)
 /*
-Ô­×Ó±äÁ¿Ëø  µ±lockÖµÎª0»òÕßÕýÊýÊ±±íÊ¾Ã»ÓÐ½ø³Ì³ÖÓÐËø£»µ±lockÖµÎª¸ºÊýÊ±±íÊ¾ÓÐ½ø³ÌÕý³ÖÓÐËø£¨ÕâÀïµÄÕý¡¢¸ºÊý½öÏà¶ÔÓÚ32Î»ÏµÍ³ÏÂÓÐ·ûºÅµÄÕûÐÍ±äÁ¿£©
-NginxÊÇÔõÑù¿ìËÙÅÐ¶ÏlockÖµÎª¡°ÕýÊý¡±»òÕß¡°¸ºÊý¡±µÄÄØ£¿ºÜ¼òµ¥£¬ÒòÎªÓÐ·ûºÅÕûÐÍµÄ×î¸ßÎ»ÊÇÓÃÓÚ±íÊ¾·ûºÅµÄ£¬ÆäÖÐ0±íÊ¾ÕýÊý£¬1±íÊ¾¸ºÊý£¬ËùÒÔ£¬ÔÚÈ·
-¶¨ÕûÐÍvalÊÇ¸ºÊý»òÕßÕýÊýÊ±£¬¿ÉÍ¨¹ýÅÐ¶Ï(val&Ox80000000)==0Óï¾äµÄÕæ¼Ù½øÐÐ¡£
+Ô­×Ó±äÁ¿Ëø  µ±lockÖµÎª0»òÕßÕýÊýÊ±±íÊ¾Ã»ÓÐ½ø³Ì³ÖÓÐËø£»
+µ±lockÖµÎª¸ºÊýÊ±±íÊ¾ÓÐ½ø³ÌÕý³ÖÓÐËø£¨ÕâÀïµÄÕý¡¢¸ºÊý½öÏà¶ÔÓÚ32Î»ÏµÍ³ÏÂÓÐ·ûºÅµÄÕûÐÍ±äÁ¿£©
+NginxÊÇÔõÑù¿ìËÙÅÐ¶ÏlockÖµÎª¡°ÕýÊý¡±»òÕß¡°¸ºÊý¡±µÄÄØ£¿
+ºÜ¼òµ¥£¬ÒòÎªÓÐ·ûºÅÕûÐÍµÄ×î¸ßÎ»ÊÇÓÃÓÚ±íÊ¾·ûºÅµÄ£¬ÆäÖÐ0±íÊ¾ÕýÊý£¬1±íÊ¾¸ºÊý£¬
+ËùÒÔ£¬ÔÚÈ·¶¨ÕûÐÍvalÊÇ¸ºÊý»òÕßÕýÊýÊ±£¬¿ÉÍ¨¹ýÅÐ¶Ï(val&Ox80000000)==0Óï¾äµÄÕæ¼Ù½øÐÐ¡£
 */
     ngx_atomic_t  *lock;  //Èç¹ûÖ§³ÖÔ­×ÓËøµÄ»°£¬ÄÇÃ´Ê¹ÓÃËü£¬ËüÖ¸ÏòµÄÊÇÒ»¶Î¹²ÏíÄÚ´æ¿Õ¼ä  Îª0±íÊ¾¿ÉÒÔ»ñµÃËø
 #if (NGX_HAVE_POSIX_SEM)
-    ngx_atomic_t  *wait; //Èç¹ûlockËøÔ­ÏÈµÄÖµÎªo£¬Ò²¾ÍÊÇËµ£¬²¢Ã»ÓÐÈÃÄ³¸ö½ø³Ì³ÖÓÐËø£¬ÕâÊ±Ö±½Ó·µ»Ø£»»òÕß£¬semaphore±êÖ¾Î»Îª0£¬±íÊ¾²»ÐèÒªÊ¹ÓÃÐÅºÅÁ¿£¬Ò²Á¢¼´·µ»Ø
-    ngx_uint_t     semaphore; //ÐÅºÅÁ¿µÄÖµ£¬Õâ¸öÖµ´óÓÚ0±íÊ¾¸ÃÐÂºÅÁ¿¿ÉÓÃ£¬Ä¬ÈÏÎª1£¬  semaphoreÎª1Ê±±íÊ¾»ñÈ¡Ëø½«¿ÉÄÜÊ¹ÓÃµ½µÄÐÅºÅÁ¿
+    ngx_atomic_t  *wait; //Èç¹ûlockËøÔ­ÏÈµÄÖµÎª0£¬Ò²¾ÍÊÇËµ£¬²¢Ã»ÓÐÈÃÄ³¸ö½ø³Ì³ÖÓÐËø£¬ÕâÊ±Ö±½Ó·µ»Ø£»»òÕß£¬semaphore±êÖ¾Î»Îª0£¬±íÊ¾²»ÐèÒªÊ¹ÓÃÐÅºÅÁ¿£¬Ò²Á¢¼´·µ»Ø
+    ngx_uint_t     semaphore; //ÐÅºÅÁ¿µÄÖµ£¬Õâ¸öÖµ´óÓÚ0±íÊ¾¸ÃÐÂºÅÁ¿¿ÉÓÃ£¬Ä¬ÈÏÎª1£¬semaphoreÎª1Ê±±íÊ¾»ñÈ¡Ëø½«¿ÉÄÜÊ¹ÓÃµ½µÄÐÅºÅÁ¿
     sem_t          sem;// sem¾ÍÊÇÐÅºÅÁ¿Ëø
 #endif
 #else
-    ngx_fd_t       fd;   //²»Ö§³ÖÔ­×Ó²Ù×÷µÄ»°¾ÍÊ¹ÓÃÎÄ¼þËøÀ´ÊµÏÖ     Ê¹ÓÃÎÄ¼þËøÊ±fd±íÊ¾Ê¹ÓÃµÄÎÄ¼þ¾ä±ú
+    ngx_fd_t       fd;   //²»Ö§³ÖÔ­×Ó²Ù×÷µÄ»°¾ÍÊ¹ÓÃÎÄ¼þËøÀ´ÊµÏÖ,Ê¹ÓÃÎÄ¼þËøÊ±fd±íÊ¾Ê¹ÓÃµÄÎÄ¼þ¾ä±ú
     u_char        *name; // name±íÊ¾ÎÄ¼þÃû
 #endif
     //×ÔÐý´ÎÊý£¬±íÊ¾ÔÚ×ÔÐý×´Ì¬ÏÂµÈ´ýÆäËû´¦ÀíÆ÷Ö´ÐÐ½á¹ûÖÐÊÍ·ÅËøµÄÊ±¼ä¡£ÓÉÎÄ¼þËøÊµÏÖÊ±£¬spinÃ»ÓÐÈÎºÎÒâÒå
@@ -66,10 +68,8 @@ NginxÊÇÔõÑù¿ìËÙÅÐ¶ÏlockÖµÎª¡°ÕýÊý¡±»òÕß¡°¸ºÊý¡±µÄÄØ£¿ºÜ¼òµ¥£¬ÒòÎªÓÐ·ûºÅÕûÐÍµÄ×î¸
     ÕâÊ±µÄ»¥³âËøÔÚÈ¡ËøÊ±¶¼»á²ÉÓÃ×ÔÐýËø£¬¶ÔÓÚNginxÕâÖÖµ¥½ø³Ì´¦Àí´óÁ¿ÇëÇóµÄ³¡¾°À´ËµÊÇ·Ç³£ÊÊºÏµÄ£¬ÄÜ¹»´óÁ¿½µµÍ²»±ØÒªµÄ½ø³Ì¼äÇÐ»»´øÀ´µÄÏûºÄ¡£
     ¼ûngx_shmtx_create
      */
-     
     ngx_uint_t     spin; //spinÖµÎª-1ÔòÊÇ¸æËßNginxÕâ°ÑËø²»¿ÉÒÔÊ¹½ø³Ì½øÈëË¯Ãß×´Ì¬  spinÖµÄ¬ÈÏÎª2048
-} ngx_shmtx_t;
-
+} ngx_shmtx_t; // shmÊÇshare memoryµÄËõÐ´£¬±íÊ¾¹²ÏíÄÚ´æ£¬mtxÊÇmutexµÄËõÐ´£¬±íÊ¾»¥³âËø
 
 ngx_int_t ngx_shmtx_create(ngx_shmtx_t *mtx, ngx_shmtx_sh_t *addr,
     u_char *name);

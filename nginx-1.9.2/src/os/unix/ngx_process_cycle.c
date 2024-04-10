@@ -313,7 +313,7 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
         exit(2);
     }
 
-    /* 把master process + 参数一起主持主进程名 */
+    /* use "master process + argv" to set 主进程名 */
     p = ngx_cpymem(title, master_process, sizeof(master_process) - 1);
     for (i = 0; i < ngx_argc; i++) {
         *p++ = ' ';

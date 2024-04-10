@@ -161,8 +161,8 @@ static ngx_core_module_t  ngx_events_module_ctx = {
 */
 //一旦在nginx.conf配置文件中找到ngx_events_module感兴趣的“events{}，ngx_events_module模块就开始工作了
 //除了对events配置项的解析外，该模块没有做其他任何事情
-ngx_module_t  ngx_events_module = {
     NGX_MODULE_V1,
+ngx_module_t  ngx_events_module = {
     &ngx_events_module_ctx,                /* module context */
     ngx_events_commands,                   /* module directives */
     NGX_CORE_MODULE,                       /* module type */
@@ -318,7 +318,7 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
    //ngx_use_accept_mutex表示是否需要通过对accept加锁来解决惊群问题。当nginx worker进程数>1时且配置文件中打开accept_mutex时，这个标志置为1   
     if (ngx_use_accept_mutex) {
         /*
-              ngx_accept_disabled表示此时满负荷，没必要再处理新连接了，我们在nginx.conf曾经配置了每一个nginx worker进程能够处理的最大连接数，
+              ngx_accept_disabled > 0 表示此时满负荷，没必要再处理新连接了，我们在nginx.conf曾经配置了每一个nginx worker进程能够处理的最大连接数，
           当达到最大数的7/8时，ngx_accept_disabled为正，说明本nginx worker进程非常繁忙，将不再去处理新连接，这也是个简单的负载均衡
               在当前使用的连接到达总连接数的7/8时，就不会再处理新连接了，同时，在每次调用process_events时都会将ngx_accept_disabled减1，
           直到ngx_accept_disabled降到总连接数的7/8以下时，才会调用ngx_trylock_accept_mutex试图去处理新连接事件。
@@ -872,10 +872,10 @@ ngx_event_process_init(ngx_cycle_t *cycle)
     ecf = ngx_event_get_conf(cycle->conf_ctx, ngx_event_core_module);
 
     /*
-         当打开accept_mutex负载均衡锁，同时使用了master模式并且worker迸程数量大于1时，才正式确定了进程将使用accept_mutex负载均衡锁。
+     当打开accept_mutex负载均衡锁，同时使用了master模式并且worker迸程数量大于1时，才正式确定了进程将使用accept_mutex负载均衡锁。
      因此，即使我们在配置文件中指定打开accept_mutex锁，如果没有使用master模式或者worker进程数量等于1，进程在运行时还是不会使用
      负载均衡锁（既然不存在多个进程去抢一个监听端口上的连接的情况，那么自然不需要均衡多个worker进程的负载）。
-         这时会将ngx_use_accept_mutex全局变量置为1，ngx_accept_mutex_held标志设为0，ngx_accept_mutex_delay则设为在配置文件中指定的最大延迟时间。
+     这时会将ngx_use_accept_mutex全局变量置为1，ngx_accept_mutex_held标志设为0，ngx_accept_mutex_delay则设为在配置文件中指定的最大延迟时间。
      */
     if (ccf->master && ccf->worker_processes > 1 && ecf->accept_mutex) {
         ngx_use_accept_mutex = 1;
@@ -932,7 +932,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
      */
     if (ngx_timer_resolution && !(ngx_event_flags & NGX_USE_TIMER_EVENT)) {
         struct sigaction  sa;
-        struct itimerval  itv;
+        struct itimerval  itv; // it: interval 
         
         //设置定时器
         /*
@@ -949,6 +949,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
             return NGX_ERROR;
         }
 
+        // it_interval: 间隔时间，it_value: 第一次超时时间
         itv.it_interval.tv_sec = ngx_timer_resolution / 1000;
         itv.it_interval.tv_usec = (ngx_timer_resolution % 1000) * 1000;
         itv.it_value.tv_sec = ngx_timer_resolution / 1000;
@@ -966,6 +967,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
     if (ngx_event_flags & NGX_USE_FD_EVENT) {
         struct rlimit  rlmt;
 
+        // get resource limit for a specified resource type.
         if (getrlimit(RLIMIT_NOFILE, &rlmt) == -1) {
             ngx_log_error(NGX_LOG_ALERT, cycle->log, ngx_errno,
                           "getrlimit(RLIMIT_NOFILE) failed");
@@ -1018,8 +1020,8 @@ ngx_event_process_init(ngx_cycle_t *cycle)
     next = NULL;
 
     /*
-    接照序号，将上述3个数组相应的读/写事件设置到每一个ngx_connection_t连接对象中，同时把这些连接以ngx_connection_t中的data成员
-    作为next指针串联成链表，为下一步设置空闲连接链表做好准备
+    接照序号，将上述3个数组相应的读/写事件设置到每一个ngx_connection_t连接对象中，
+    同时把这些连接以ngx_connection_t中的data成员作为next指针串联成链表，为下一步设置空闲连接链表做好准备
      */
     do {
         i--;
@@ -1041,16 +1043,19 @@ ngx_event_process_init(ngx_cycle_t *cycle)
 
     /* for each listening socket */
     /*
-     在刚刚建立好的连接池中，为所有ngx_listening_t监听对象中的connection成员分配连接，同时对监听端口的读事件设置处理方法
-     为ngx_event_accept，也就是说，有新连接事件时将调用ngx_event_accept方法建立新连接（）。
+     在刚刚建立好的连接池中，为所有ngx_listening_t监听对象中的connection成员分配连接
+     同时对监听端口的读事件设置处理方法为ngx_event_accept，
+     也就是说，有新连接事件时将调用ngx_event_accept方法建立新连接
      */
     ls = cycle->listening.elts;
     for (i = 0; i < cycle->listening.nelts; i++) { 
 
 #if (NGX_HAVE_REUSEPORT)
-        //master进程执行ngx_clone_listening中如果配置了多worker，监听80端口会有worker个listen赋值，master进程在ngx_open_listening_sockets
-        //中会监听80端口worker次，那么子进程创建起来后，不是每个字进程都关注这worker多个 listen事件了吗?为了避免这个问题，nginx通过
-        //在子进程运行ngx_event_process_init函数的时候，通过ngx_add_event来控制子进程关注的listen，最终实现只关注master进程中创建的一个listen事件
+        // master进程执行ngx_clone_listening中如果配置了多worker，监听80端口会有worker个listen赋值
+        // master进程在ngx_open_listening_sockets中会监听80端口worker次，
+        // 那么子进程创建起来后，不是每个字进程都关注这worker多个 listen事件了吗?
+        // 为了避免这个问题，nginx通过在子进程运行ngx_event_process_init函数的时候
+        // 通过ngx_add_event来控制子进程关注的listen，最终实现只关注master进程中创建的一个listen事件
         if (ls[i].reuseport && ls[i].worker != ngx_worker) {
             continue;
         }

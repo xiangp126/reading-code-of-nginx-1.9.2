@@ -32,8 +32,8 @@ static void ngx_close_accepted_connection(ngx_connection_t *c);
 //这里的event是在ngx_event_process_init中从连接池中获取的 ngx_connection_t中的->read读事件
 //accept是在ngx_event_process_init(但进程或者不配置负载均衡的时候)或者(多进程，配置负载均衡)的时候把accept事件添加到epoll中
 void //该形参中的ngx_connection_t(ngx_event_t)是为accept事件连接准备的空间，当accept返回成功后，会重新获取一个ngx_connection_t(ngx_event_t)用来读写该连接
-ngx_event_accept(ngx_event_t *ev) //在ngx_process_events_and_timers中执行              
 { //一个accept事件对应一个ev，如当前一次有4个客户端accept，应该对应4个ev事件，一次来多个accept的处理在下面的do {}while中实现
+ngx_event_accept(ngx_event_t *ev) //在ngx_process_events_and_timers中执行              
     socklen_t          socklen;
     ngx_err_t          err;
     ngx_log_t         *log;
@@ -394,7 +394,8 @@ ngx_event_accept(ngx_event_t *ev) //在ngx_process_events_and_timers中执行
 }
 
 /*
-获得accept锁，多个worker仅有一个可以得到这把锁。获得锁不是阻塞过程，都是立刻返回，获取成功的话ngx_accept_mutex_held被置为1。
+获得accept锁，多个worker仅有一个可以得到这把锁。获得锁不是阻塞过程，都是立刻返回，
+获取成功的话ngx_accept_mutex_held被置为1。
 拿到锁，意味着监听句柄被放到本进程的epoll中了，如果没有拿到锁，则监听句柄会被从epoll中取出。 
 */ //尝试获取锁，如果获取了锁，那么还要将当前监听端口全部注册到当前worker进程的epoll当中去   
 ngx_int_t
@@ -405,13 +406,15 @@ ngx_trylock_accept_mutex(ngx_cycle_t *cycle)
         ngx_log_debug0(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                        "accept mutex locked");
 
-        //如果本来已经获得锁，则直接返回Ok,
-        //有了该标记，表示该进程已经把accept事件添加到epoll事件集中了，不用重复执行后面的ngx_enable_accept_events，该函数是有系统调用过程，影响性能
+        // 如果本来已经获得锁，则直接返回Ok,
+        // 有了该标记，表示该进程已经把accept事件添加到epoll事件集中了，
+        // 不用重复执行后面的ngx_enable_accept_events，该函数是有系统调用过程，影响性能
         if (ngx_accept_mutex_held && ngx_accept_events == 0) {
             return NGX_OK;
         }
 
-   //到达这里，说明重新获得锁成功，因此需要打开被关闭的listening句柄，调用ngx_enable_accept_events函数，将监听端口注册到当前worker进程的epoll当中去   
+        // 到达这里，说明获得锁成功，因此需要打开被关闭的listening句柄
+        // 调用ngx_enable_accept_events函数，将监听端口注册到当前worker进程的epoll当中去   
         if (ngx_enable_accept_events(cycle) == NGX_ERROR) {
             ngx_shmtx_unlock(&ngx_accept_mutex);
             return NGX_ERROR;
@@ -426,7 +429,8 @@ ngx_trylock_accept_mutex(ngx_cycle_t *cycle)
     ngx_log_debug1(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                    "accept mutex lock failed: %ui", ngx_accept_mutex_held);
 
-//这里表示的是以前曾经获取过，但是这次却获取失败了，那么需要将监听端口从当前的worker进程的epoll当中移除，调用的是ngx_disable_accept_events函数   
+    //这里表示的是以前曾经获取过，但是这次却获取失败了
+    //那么需要将监听端口从当前的worker进程的epoll当中移除，调用的是ngx_disable_accept_events函数   
     if (ngx_accept_mutex_held) {
         if (ngx_disable_accept_events(cycle, 0) == NGX_ERROR) {
             return NGX_ERROR;
@@ -450,16 +454,18 @@ ngx_enable_accept_events(ngx_cycle_t *cycle)
 
     /*
     注意:这里的循环会把所有的listening加入到了epoll中，那不是每个进程都会把所有的listening加入到epoll中吗，不是有惊群了吗?
-    答案:实际上在本进程ngx_enable_accept_events把所有listen加入本进程epoll中后，本进程获取到ngx_accept_mutex锁后，在执行accept事件的
-    过程中如果如果其他进程也开始ngx_trylock_accept_mutex，如果之前已经获取到锁，并把所有的listen添加到了epoll中，这时会因为没法获取到
-    accept锁，而把之前加入到本进程，但没有accept过的时间全部清除。和ngx_disable_accept_events配合使用
-    最终只有一个进程能accept到同一个客户端连接
+    答案:实际上在本进程ngx_enable_accept_events把所有listen加入本进程epoll中后，
+    本进程获取到ngx_accept_mutex锁后，在执行accept事件的
+    过程中如果如果其他进程也开始ngx_trylock_accept_mutex，如果之前已经获取到锁，并把所有的listen添加到了epoll中，
+    这时会因为没法获取到accept锁，而把之前加入到本进程，但没有accept过的event全部清除。
+    和ngx_disable_accept_events配合使用 最终只有一个进程能accept到同一个客户端连接
      */
     for (i = 0; i < cycle->listening.nelts; i++) { 
 
         c = ls[i].connection;
 
-        //后面的ngx_add_event->ngx_epoll_add_event中把listening中的c->read->active置1， ngx_epoll_del_event中把listening中置read->active置0
+        // 后面的ngx_add_event->ngx_epoll_add_event中把listening中的c->read->active置1
+        // ngx_epoll_del_event中把listening中置read->active置0
         if (c == NULL || c->read->active) { //之前本进程已经添加过，不用再加入epoll事件中，避免重复
             continue;
         }

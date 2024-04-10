@@ -146,9 +146,12 @@ ngx_shmtx_destroy(ngx_shmtx_t *mtx)
 }
 
 /*
-首先是判断mtx的lock域是否等于0，如果不等于，那么就直接返回false好了，如果等于的话，那么就要调用原子操作ngx_atomic_cmp_set了，
-它用于比较mtx的lock域，如果等于零，那么设置为当前进程的进程id号，否则返回false。
-*/ //不管能不能获得到锁都返回  nginx是原子变量和信号量合作以实现高效互斥锁的
+不管能不能获得到锁都返回,nginx是原子变量和信号量合作以实现高效互斥锁的
+If the lock is held by another process, ngx_shmtx_trylock() returns 0.
+Otherwise, it sets the lock to the current process ID and returns 1.
+
+*mtx->lock != 0 means the lock is held by another process.
+*/
 ngx_uint_t
 ngx_shmtx_trylock(ngx_shmtx_t *mtx)
 {
@@ -174,7 +177,7 @@ ngx_shmtx_lock(ngx_shmtx_t *mtx)
         if (*mtx->lock == 0 && ngx_atomic_cmp_set(mtx->lock, 0, ngx_pid)) {
             return;
         }
-        //仅在多处理器状态下spin值才有意义，否则PAUSE指令是不会执行的
+        // number of cpu cores > 1
         if (ngx_ncpu > 1) {
             //循环执行PAUSE，检查锁是否已经释放
             for (n = 1; n < mtx->spin; n <<= 1) {
