@@ -275,7 +275,7 @@ struct ngx_connection_s {  //cycle->read_events和cycle->write_events这两个数组存
     ngx_log_t          *log;//可以记录日志的ngx_log_t对象 其实就是ngx_listening_t中获取的log //赋值见ngx_event_accept
 
     /*
-    内存池。一般在accept -个新连接时，会创建一个内存池，而在这个连接结束时会销毁内存池。注意，这里所说的连接是指成功建立的
+    内存池。一般在accept-个新连接时，会创建一个内存池，而在这个连接结束时会销毁内存池。注意，这里所说的连接是指成功建立的
     TCP连接，所有的ngx_connection_t结构体都是预分配的。这个内存池的大小将由listening监听对象中的pool_size成员决定
      */
     ngx_pool_t         *pool; //在accept返回成功后创建pool,见ngx_event_accept，连接上游服务区的时候在ngx_http_upstream_connect创建

@@ -201,12 +201,13 @@ ETag£º±£´æÎÄ¼şµÄÎ¨Ò»±êÊ¶£¨ÎÒÔÚÓÃµÄÎÄ¼şÃû+ÎÄ¼ş×îºóĞŞ¸ÄÊ±¼ä£¬ÒÔ±ãĞø´«ÇëÇóÊ±¶ÔÎÄ¼ş½
     { ngx_null_string, 0, NULL }
 };
 
-//ÉèÖÃngx_listening_tµÄhandler£¬Õâ¸öhandler»áÔÚ¼àÌıµ½¿Í»§¶ËÁ¬½ÓÊ±±»µ÷ÓÃ£¬¾ßÌå¾ÍÊÇÔÚngx_event_acceptº¯ÊıÖĞ£¬ngx_http_init_connectionº¯Êı¹ËÃûË¼Òå£¬¾ÍÊÇ³õÊ¼»¯Õâ¸öĞÂ½¨µÄÁ¬½Ó
+// ngx_http_init_connectionº¯Êı¹ËÃûË¼Òå£¬¾ÍÊÇ³õÊ¼»¯Õâ¸öĞÂ½¨µÄÁ¬½Ó
+// µ±½¨Á¢Á¬½Óºó¿ª±Ùngx_http_connection_t½á¹¹
+// ÕâÀïÃæ´æ´¢¸Ã·şÎñÆ÷¶Ëip:portËùÔÚserver{}ÉÏÏÂÎÄÅäÖÃĞÅÏ¢£¬ºÍserver_nameĞÅÏ¢µÈ
+// È»ºóÈÃngx_connection_t->dataÖ¸Ïò¸Ã½á¹¹
+// ÕâÑù¾Í¿ÉÒÔÍ¨¹ıngx_connection_t->data»ñÈ¡µ½·şÎñÆ÷¶ËµÄserv loc µÈÅäÖÃĞÅÏ¢ÒÔ¼°¸Ãserver{}ÖĞµÄserver_nameĞÅÏ¢
 void
 ngx_http_init_connection(ngx_connection_t *c) 
-//µ±½¨Á¢Á¬½Óºó¿ª±Ùngx_http_connection_t½á¹¹£¬ÕâÀïÃæ´æ´¢¸Ã·şÎñÆ÷¶Ëip:portËùÔÚserver{}ÉÏÏÂÎÄÅäÖÃĞÅÏ¢£¬ºÍserver_nameĞÅÏ¢µÈ£¬È»ºóÈÃ
-//ngx_connection_t->dataÖ¸Ïò¸Ã½á¹¹£¬ÕâÑù¾Í¿ÉÒÔÍ¨¹ıngx_connection_t->data»ñÈ¡µ½·şÎñÆ÷¶ËµÄserv loc µÈÅäÖÃĞÅÏ¢ÒÔ¼°¸Ãserver{}ÖĞµÄserver_nameĞÅÏ¢
-
 {
     ngx_uint_t              i;
     ngx_event_t            *rev;
@@ -244,7 +245,7 @@ ngx_http_init_connection(ngx_connection_t *c)
          * is an "*:port" wildcard so getsockname() in ngx_http_server_addr()
          * is required to determine a server address
          */
-        // ËµÃ÷listen ip:port´æÔÚ¼¸ÌõÃ»ÓĞbindÑ¡Ïî£¬²¢ÇÒ´æÔÚÍ¨Åä·ûÅäÖÃ£¬Èçlisten *:port
+        // ËµÃ÷listen ip:port´æÔÚÍ¨Åä·ûÅäÖÃ£¬Èçlisten *:port
         // ÄÇÃ´¾ÍĞèÒªÍ¨¹ıngx_connection_local_sockaddrÀ´È·¶¨¾¿¾¹¿Í»§¶ËÊÇºÍÄÇ¸ö±¾µØipµØÖ·½¨Á¢µÄÁ¬½Ó
         if (ngx_connection_local_sockaddr(c, NULL, 0) != NGX_OK) { //
             ngx_http_close_connection(c);
@@ -409,7 +410,8 @@ ngx_http_init_connection·½·¨¶¼ÊÇÓÉÁ½¸öÊÂ¼ş£¨TCPÁ¬½Ó½¨Á¢³É¹¦ÊÂ¼şºÍÁ¬½ÓÉÏµÄ¿É¶ÁÊÂ¼
     ngx_add_timer(rev, c->listening->post_accept_timeout, NGX_FUNC_LINE); //°Ñ½ÓÊÕÊÂ¼şÌí¼Óµ½¶¨Ê±Æ÷ÖĞ£¬µ±post_accept_timeoutÃë»¹Ã»ÓĞ¿Í»§¶ËÊı¾İµ½À´£¬¾Í¹Ø±ÕÁ¬½Ó
     ngx_reusable_connection(c, 1);
     
-    if (ngx_handle_read_event(rev, 0, NGX_FUNC_LINE) != NGX_OK) { //µ±ÏÂ´ÎÓĞÊı¾İ´Ó¿Í»§¶Ë·¢ËÍ¹ıÀ´µÄÊ±ºò£¬»áÔÚngx_epoll_process_events°Ñ¶ÔÓ¦µÄreadyÖÃ1¡£
+    //µ±ÏÂ´ÎÓĞÊı¾İ´Ó¿Í»§¶Ë·¢ËÍ¹ıÀ´µÄÊ±ºò£¬»áÔÚngx_epoll_process_events°Ñ¶ÔÓ¦µÄreadyÖÃ1¡£
+    if (ngx_handle_read_event(rev, 0, NGX_FUNC_LINE) != NGX_OK) {
         ngx_http_close_connection(c);
         return;
     }
@@ -417,8 +419,8 @@ ngx_http_init_connection·½·¨¶¼ÊÇÓÉÁ½¸öÊÂ¼ş£¨TCPÁ¬½Ó½¨Á¢³É¹¦ÊÂ¼şºÍÁ¬½ÓÉÏµÄ¿É¶ÁÊÂ¼
 
 // ¿Í»§¶Ë½¨Á¢Á¬½Óºó£¬Ö»ÓĞµÚÒ»´Î¶ÁÈ¡¿Í»§¶ËÊı¾İµÄÊ±ºò£¬Ö´ĞĞµÄhandlerÖ¸Ïò¸Ãº¯Êı
 // Òò´Ëµ±¿Í»§¶ËÁ¬½Ó½¨Á¢³É¹¦ºó£¬Ö»ÓĞµÚÒ»´Î¶ÁÈ¡¿Í»§¶ËÊı¾İ²Å»á×ß¸Ãº¯Êı
-// Èç¹ûÔÚ±£»îÆÚÄÚÓÖÊÕµ½¿Í»§¶ËÇëÇó£¬Ôò²»»áÔÙ×ß¸Ãº¯Êı£¬¶øÊÇÖ´ĞĞngx_http_process_request_line£¬ÒòÎª¸Ãº¯Êı
-// °ÑhandlerÖ¸ÏòÁËngx_http_process_request_line
+// Èç¹ûÔÚ±£»îÆÚÄÚÓÖÊÕµ½¿Í»§¶ËÇëÇó£¬Ôò²»»áÔÙ×ß¸Ãº¯Êı£¬¶øÊÇÖ´ĞĞngx_http_process_request_line
+// ÒòÎª¸Ãº¯Êı°ÑhandlerÖ¸ÏòÁËngx_http_process_request_line
 static void
 ngx_http_wait_request_handler(ngx_event_t *rev)
 {

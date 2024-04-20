@@ -1200,7 +1200,7 @@ struct ngx_http_request_s { //当接收到客户端请求数据后，调用ngx_http_create_requ
                                          /* of ngx_http_upstream_state_t */
 
     /*
-    表示这个请求的内存池，在ngx_http_free_request方法中销毁。它与ngx_connection-t中的内存池意义不同，当请求释放时，TCP连接可能并
+    表示这个请求的内存池，在ngx_http_free_request方法中销毁。它与ngx_connection_t中的内存池意义不同，当请求释放时，TCP连接可能并
     没有关闭，这时请求的内存池会销毁，但ngx_connection_t的内存池并不会销毁
      */
     ngx_pool_t                       *pool;

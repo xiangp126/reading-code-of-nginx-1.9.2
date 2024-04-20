@@ -43,7 +43,7 @@
 |   |   |   |   |   |   |   \-- ngx_pnalloc
 |   |   |   |   |   |   |   \-- ngx_hash_find
 |   |   |   |   |   |   |   \-- ngx_http_process_user_agent //header 1 handler
-|   |   |   |   |   |   |   \-- ngx_http_parse_header_line  // header 2
+|   |   |   |   |   |   |   \-- ngx_http_parse_header_line  // header 1
 |   |   |   |   |   |   |   \-- ngx_list_push
 |   |   |   |   |   |   |   \-- ngx_pnalloc
 |   |   |   |   |   |   |   \-- ngx_hash_find

@@ -408,8 +408,9 @@ epoll_wait返回，可以是读写事件触发返回，也可能是因为没获取到共享锁，从而等待0.5s
     }
     
     /*
-     然后再处理正常的数据读写请求。因为这些请求耗时久，所以在ngx_process_events里NGX_POST_EVENTS标志将事件都放入ngx_posted_events
-     链表中，延迟到锁释放了再处理。 
+     然后再处理正常的数据读写请求。因为这些请求耗时久
+     所以在ngx_process_events里NGX_POST_EVENTS标志将事件都放入ngx_posted_events链表中
+     延迟到锁释放了再处理。 
      */
     ngx_event_process_posted(cycle, &ngx_posted_events); //普通读写事件放在释放ngx_accept_mutex锁后执行，提高客户端accept性能
 }
@@ -433,7 +434,6 @@ epoll的两种模式LT和ET
 所以，在epoll的ET模式下，正确的读写方式为:
 读：只要可读，就一直读，直到返回0，或者 errno = EAGAIN
 写:只要可写，就一直写，直到数据发送完，或者 errno = EAGAIN
-
 
 
 ngx_handle_read_event方法会将读事件添加到事件驱动模块中，这样该事件对应的TCP连接上一旦出现可读事件（如接收到TCP连接另一
@@ -472,8 +472,7 @@ ET模式下，EPOLLOUT触发条件有：
 
 另：
 一道腾讯后台开发的面试题
-使用Linux epoll模型，水平触发模式；当socket可写时，会不停的触发socket
-可写的事件，如何处理？
+使用Linux epoll模型，水平触发模式；当socket可写时，会不停的触发socket可写的事件，如何处理？
 
 
 第一种最普遍的方式：
@@ -482,8 +481,8 @@ ET模式下，EPOLLOUT触发条件有：
 
 
 一种改进的方式：
-开始不把socket加入epoll，需要向socket写数据的时候，直接调用write或者send发送数据。如果返回EAGAIN，把socket加入epoll，在epoll
-的驱动下写数据，全部数据发送完毕后，再移出epoll。
+开始不把socket加入epoll，需要向socket写数据的时候，直接调用write或者send发送数据。
+如果返回EAGAIN，把socket加入epoll，在epoll的驱动下写数据，全部数据发送完毕后，再移出epoll。
 这种方式的优点是：数据不多的时候可以避免epoll的事件处理，提高效率。
 */
 ngx_int_t
