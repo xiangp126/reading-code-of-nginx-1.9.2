@@ -1,0 +1,6 @@
+break ngx_worker_process_cycle
+break ngx_http_init_connection
+break ngx_http_wait_request_handler
+break ngx_http_process_request_line
+break ngx_http_parse_request_line
+break ngx_http_read_client_request_body

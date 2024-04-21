@@ -31,9 +31,11 @@ static void ngx_close_accepted_connection(ngx_connection_t *c);
 */
 //这里的event是在ngx_event_process_init中从连接池中获取的 ngx_connection_t中的->read读事件
 //accept是在ngx_event_process_init(但进程或者不配置负载均衡的时候)或者(多进程，配置负载均衡)的时候把accept事件添加到epoll中
-void //该形参中的ngx_connection_t(ngx_event_t)是为accept事件连接准备的空间，当accept返回成功后，会重新获取一个ngx_connection_t(ngx_event_t)用来读写该连接
-{ //一个accept事件对应一个ev，如当前一次有4个客户端accept，应该对应4个ev事件，一次来多个accept的处理在下面的do {}while中实现
-ngx_event_accept(ngx_event_t *ev) //在ngx_process_events_and_timers中执行              
+//一个accept事件对应一个ev，如当前一次有4个客户端accept，应该对应4个ev事件，一次来多个accept的处理在下面的do {}while中实现
+//该形参中的ngx_connection_t(ngx_event_t)是为accept事件连接准备的空间，当accept返回成功后，会重新获取一个ngx_connection_t(ngx_event_t)用来读写该连接
+//在ngx_process_events_and_timers中执行              
+void
+ngx_event_accept(ngx_event_t *ev) {
     socklen_t          socklen;
     ngx_err_t          err;
     ngx_log_t         *log;

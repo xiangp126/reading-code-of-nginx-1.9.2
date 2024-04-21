@@ -161,8 +161,8 @@ static ngx_core_module_t  ngx_events_module_ctx = {
 */
 //一旦在nginx.conf配置文件中找到ngx_events_module感兴趣的“events{}，ngx_events_module模块就开始工作了
 //除了对events配置项的解析外，该模块没有做其他任何事情
-    NGX_MODULE_V1,
 ngx_module_t  ngx_events_module = {
+    NGX_MODULE_V1,
     &ngx_events_module_ctx,                /* module context */
     ngx_events_commands,                   /* module directives */
     NGX_CORE_MODULE,                       /* module type */
